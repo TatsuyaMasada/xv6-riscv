@@ -21,11 +21,11 @@ int main(int argc, char *argv[]) {
 
     unsigned char buf = 0;
     int fd1[2], fd2[2];
+    int status;
+    int rounds = 0;
     pipe(fd1); // parent sends
     pipe(fd2);  // child sends
     int pid = fork();
-    int status;
-    int rounds = 0;
 
     if(pid == 0) { /* child */
         close(fd1[1]);
