@@ -152,6 +152,16 @@ filewrite(struct file *f, uint64 addr, int n)
     // and 2 blocks of slop for non-aligned writes.
     // this really belongs lower down, since writei()
     // might be writing a device like the console.
+    /***********変更点*************************/
+    char *zero = "\0";
+    if((f->off > f->ip->size) && f->writable == 1) {
+      begin_op();
+      ilock(f->ip);
+      writei(f->ip, 0, (uint64)zero, f->ip->size, f->off - f->ip->size);
+      iunlock(f->ip);
+      end_op();
+    }
+    /*****************************************/
     int max = ((MAXOPBLOCKS-1-1-2) / 2) * BSIZE;
     int i = 0;
     while(i < n){

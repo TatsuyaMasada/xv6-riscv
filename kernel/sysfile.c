@@ -335,10 +335,13 @@ sys_open(void)
     f->major = ip->major;
   } else {
     f->type = FD_INODE;
-    if(!(omode & O_APPEND)) {
-      f->off = 0;
-    }
+    f->off = 0;
   }
+  /************変更点************/
+  if(omode & O_APPEND) {
+    f->off = ip->size;
+  }
+  /*****************************/
   f->ip = ip;
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
@@ -486,4 +489,52 @@ sys_pipe(void)
     return -1;
   }
   return 0;
+}
+
+//lseek
+uint64
+sys_lseek(void){
+  struct file *f;
+  int offset;
+  int whence;
+
+  if(argfd(0, 0, &f) < 0 || argint(1, &offset) < 0 || argint(2, &whence) < 0) {
+    return -1;
+  }
+  if(f->type != FD_INODE) {
+    return -1;
+  }
+
+  int off;
+
+  switch (whence) {
+    case SEEK_SET:
+      off = 0;
+      break;
+    case SEEK_CUR:
+      off = f->off;
+      break;
+    case SEEK_END:
+      off = f->ip->size;
+      break;
+    default:
+      panic("lseek");
+      return -1;
+  }
+
+  off += offset;
+
+  if(off < 0){
+    panic("lseek");
+    return -1;
+  }else if(off > BSIZE * MAXFILE){
+    panic("lseek");
+    return -1;
+  }
+
+  begin_op();
+  f->off=off;
+  end_op();
+  
+  return f->off;
 }
